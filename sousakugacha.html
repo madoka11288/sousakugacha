@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>今日の創作ガチャ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#edf0f2;--ink:#1f2a33;--sub:#6b7885;--line:#c9d0d6;--accent:#4c6cb3;--on-accent:#fff}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;line-height:1.8;min-height:100vh;padding:clamp(1.2rem,4vw,3rem) clamp(1rem,4vw,3rem)}
+main{max-width:56rem;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin-bottom:2rem}
+h1{font-size:clamp(1.2rem,3.4vw,1.6rem);font-weight:600;letter-spacing:.2em;margin:0}
+#date{color:var(--sub);font-size:.85rem}
+.board{display:grid;grid-template-columns:repeat(5,1fr);border-block:1px solid var(--line)}
+.cell{appearance:none;border:0;border-left:1px solid var(--line);background:transparent;color:inherit;font:inherit;padding:1rem .2rem 1.2rem;display:flex;flex-direction:column;align-items:center;gap:1rem;cursor:pointer;transition:background .3s,color .3s}
+.cell:first-child{border-left:0}
+.cell:focus-visible,button.main:focus-visible,button.sub:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.lbl{font-size:.8rem;color:var(--sub);letter-spacing:.1em}
+.val{writing-mode:vertical-rl;font-size:clamp(1.25rem,4.6vw,2.2rem);font-weight:600;letter-spacing:.18em;min-height:10em}
+.lock{font-size:.75rem;color:var(--sub);opacity:0;transition:opacity .2s}
+.cell[aria-pressed="true"] .lock{opacity:1}
+.cell[aria-pressed="true"] .lbl::after{content:"・固定"}
+.cell.color{background:var(--accent);color:var(--on-accent)}
+.cell.color .lbl,.cell.color .lock{color:inherit;opacity:.8}
+.cell.color .lock{opacity:0}
+.cell.color[aria-pressed="true"] .lock{opacity:.8}
+.actions{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-top:2rem}
+button.main{font:inherit;font-weight:600;letter-spacing:.3em;background:var(--ink);color:var(--bg);border:0;padding:.9rem 2.4rem;cursor:pointer;border-radius:2px}
+button.sub{font:inherit;background:none;color:var(--ink);border:1px solid var(--ink);padding:.85rem 1.4rem;cursor:pointer;border-radius:2px}
+button.main:active,button.sub:active{transform:translateY(1px)}
+#sentence{margin:2rem 0 0;color:var(--ink);font-size:1.05rem;min-height:3.6em;max-width:36rem}
+.hint{color:var(--sub);font-size:.8rem;margin-top:1.5rem}
+@media (max-width:480px){.lbl{font-size:.7rem}.cell{padding-inline:0}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>今日の創作ガチャ</h1>
+    <span id="date"></span>
+  </header>
+
+  <section class="board" aria-label="今日のお題">
+    <button class="cell" data-key="weather" aria-pressed="false"><span class="lbl">天気</span><span class="val"></span><span class="lock">動かさない</span></button>
+    <button class="cell color" data-key="color" aria-pressed="false"><span class="lbl">色</span><span class="val"></span><span class="lock">動かさない</span></button>
+    <button class="cell" data-key="place" aria-pressed="false"><span class="lbl">場所</span><span class="val"></span><span class="lock">動かさない</span></button>
+    <button class="cell" data-key="emotion" aria-pressed="false"><span class="lbl">感情</span><span class="val"></span><span class="lock">動かさない</span></button>
+    <button class="cell" data-key="motif" aria-pressed="false"><span class="lbl">モチーフ</span><span class="val"></span><span class="lock">動かさない</span></button>
+  </section>
+
+  <div class="actions">
+    <button class="main" id="roll">引く</button>
+    <button class="sub" id="copy">お題をコピー</button>
+  </div>
+
+  <p id="sentence" aria-live="polite"></p>
+  <p class="hint">気に入った列を押すと固定され、ほかの列だけを引き直せます。</p>
+</main>
+
+<script>
+const DATA = {
+  weather: ["快晴","薄曇り","霧雨","通り雨","夕立","雪","粉雪","朝靄","強風","凪","雷","虹","花曇り","梅雨空","木枯らし","陽炎","星空","朧月夜","台風前の静けさ","夕焼け","曇天","春一番","みぞれ","蒸し暑い夜","秋晴れ","氷雨","月の見えない夜"],
+  color: [["茜色","#b7282e"],["山吹色","#f8b500"],["若竹色","#68be8d"],["浅葱色","#00a3af"],["群青色","#4c6cb3"],["藤色","#bbbcde"],["撫子色","#dc9fb4"],["鈍色","#727171"],["墨色","#595857"],["琥珀色","#bf783a"],["萌黄色","#a8c97f"],["鉄紺","#17184b"],["珊瑚色","#f5b1aa"],["白群","#83cbd2"],["紅梅色","#f2a0a1"],["紫紺","#3a2a5b"],["錆色","#7b4b3a"],["翡翠色","#38b48b"],["芥子色","#caad5f"],["葡萄色","#5a4f74"],["空色","#a0d8ef"],["牡丹色","#e7609e"],["千歳緑","#316745"],["薄墨色","#a3a3a2"]],
+  place: ["終電後のホーム","誰もいない図書館","屋上","夜の海岸","廃校の教室","コインランドリー","坂の途中","商店街の裏路地","古い喫茶店","踏切の前","河川敷","深夜のコンビニ","団地の階段","動物のいない動物園","神社の裏","バス停","閉館後の美術館","名前のない駅","祖母の家の縁側","高架下","温室","引っ越し前の部屋","展望台","雨の日の歩道橋","夜行バス","自販機の前","銭湯の帰り道"],
+  emotion: ["懐かしさ","焦燥","説明できない寂しさ","静かな怒り","安堵","憧れ","諦め","罪悪感","期待","倦怠","ときめき","後ろめたさ","羨望","慈しみ","虚無","気恥ずかしさ","孤独の心地よさ","未練","不安","祈り","眠気","高揚","待つこと","許し"],
+  motif: ["鍵","傘","切符","古い写真","蛍光灯","空き瓶","手紙","時計","猫","窓","影","砂","紙飛行機","電線","月","髪","階段","鏡","割れたカップ","風鈴","錆びた自転車","蝉の抜け殻","消えかけの文字","花びら","糸","水たまり","オルゴール","ラジオ","金魚"]
+};
+const KEYS = ["weather","color","place","emotion","motif"];
+const cells = Object.fromEntries(KEYS.map(k => [k, document.querySelector(`[data-key="${k}"]`)]));
+const locked = {};
+let current = {};
+let busy = false;
+
+const pick = a => a[Math.floor(Math.random() * a.length)];
+
+function textOn(hex){
+  const [r,g,b] = [1,3,5].map(i => parseInt(hex.slice(i,i+2),16));
+  return (0.299*r + 0.587*g + 0.114*b) > 150 ? "#1f2a33" : "#ffffff";
+}
+
+function show(k, v){
+  const cell = cells[k];
+  if (k === "color") {
+    cell.querySelector(".val").textContent = v[0];
+    document.documentElement.style.setProperty("--accent", v[1]);
+    document.documentElement.style.setProperty("--on-accent", textOn(v[1]));
+  } else {
+    cell.querySelector(".val").textContent = v;
+  }
+}
+
+function sentence(){
+  const c = current;
+  return `${c.weather}の${c.place}。${c.color[0]}。${c.emotion}。そこに、${c.motif}。`;
+}
+
+function roll(){
+  if (busy) return;
+  const targets = KEYS.filter(k => !locked[k]);
+  if (!targets.length) return;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const finish = () => {
+    targets.forEach(k => { current[k] = pick(DATA[k]); show(k, current[k]); });
+    document.getElementById("sentence").textContent = sentence();
+    busy = false;
+  };
+  if (reduce) return finish();
+  busy = true;
+  let n = 0;
+  const t = setInterval(() => {
+    targets.forEach(k => show(k, pick(DATA[k])));
+    if (++n >= 9) { clearInterval(t); finish(); }
+  }, 70);
+}
+
+KEYS.forEach(k => cells[k].addEventListener("click", () => {
+  locked[k] = !locked[k];
+  cells[k].setAttribute("aria-pressed", locked[k]);
+}));
+
+document.getElementById("roll").addEventListener("click", roll);
+
+document.getElementById("copy").addEventListener("click", async e => {
+  const btn = e.currentTarget;
+  const text = `今日の創作ガチャ\n天気：${current.weather}\n色：${current.color[0]}\n場所：${current.place}\n感情：${current.emotion}\nモチーフ：${current.motif}`;
+  try { await navigator.clipboard.writeText(text); btn.textContent = "コピーしました"; }
+  catch { btn.textContent = "コピーできませんでした"; }
+  setTimeout(() => btn.textContent = "お題をコピー", 1600);
+});
+
+const d = new Date();
+document.getElementById("date").textContent = `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()}`;
+roll();
+</script>
+</body>
+</html>
